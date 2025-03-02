@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADHD Time Bubbles</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f0f8ff;
+        color: #333;
+        transition: background-color 0.5s;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #4a6fa5;
+        margin-bottom: 30px;
+      }
+      .step {
+        display: none;
+        animation: fadeIn 0.5s;
+      }
+      .step.active {
+        display: block;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a6fa5;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 20px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #4a6fa5;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        display: block;
+        margin: 20px auto;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #3a5a8a;
+      }
+      .bubbles-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 30px;
+        gap: 15px;
+      }
+      .bubble {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #8fb8de;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        position: relative;
+        transition: transform 0.3s, opacity 0.3s;
+        animation: float 3s infinite alternate;
+      }
+      .bubble.popped {
+        transform: scale(0);
+        opacity: 0;
+      }
+      .bubble::before {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        top: 15px;
+        left: 15px;
+      }
+      .time-display {
+        text-align: center;
+        font-size: 24px;
+        margin: 20px 0;
+        font-weight: bold;
+        color: #4a6fa5;
+      }
+      .time-info {
+        background-color: #e8f4ff;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .time-info p {
+        margin: 5px 0;
+      }
+      .notifications {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+      }
+      .notification {
+        background-color: #4a6fa5;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        transform: translateX(120%);
+        animation: slideIn 0.5s forwards, fadeOut 0.5s 60s forwards;
+        max-width: 300px;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes float {
+        0% {
+          transform: translateY(0);
+        }
+        100% {
+          transform: translateY(-10px);
+        }
+      }
+      @keyframes slideIn {
+        to {
+          transform: translateX(0);
+        }
+      }
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          transform: translateX(120%);
+        }
+      }
+      .progress-container {
+        height: 8px;
+        width: 100%;
+        background-color: #ddd;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      .progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        background-color: #4a6fa5;
+        width: 0%;
+        transition: width 0.5s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>ADHD Time Bubbles</h1>
+
+      <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <!-- Step 1 -->
+      <div class="step active" id="step1">
+        <h2>Welcome!</h2>
+        <p>
+          This app helps visualize how much time you have before you need to
+          start getting ready for your next activity.
+        </p>
+        <button id="beginButton">Let's Begin</button>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" id="step2">
+        <h2>What do you need to do next?</h2>
+        <input
+          type="text"
+          id="taskInput"
+          placeholder="e.g., Doctor's appointment, Meeting, Picking up kids..."
+          required
+        />
+        <button id="step2Next">Next</button>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" id="step3">
+        <h2>When does this need to be done?</h2>
+        <label for="taskDate">Date:</label>
+        <input type="date" id="taskDate" required />
+        <label for="taskTime">Time:</label>
+        <input type="time" id="taskTime" required />
+        <button id="step3Next">Next</button>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step" id="step4">
+        <h2>Is there anything else you need to do before that?</h2>
+        <select id="prepNeeded">
+          <option value="yes">Yes, I need to prepare</option>
+          <option value="no">No, I'm ready to go</option>
+        </select>
+        <button id="step4Next">Next</button>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step" id="step5">
+        <h2>How long will you need to get ready?</h2>
+        <label for="prepHours">Hours:</label>
+        <input type="number" id="prepHours" min="0" max="24" value="0" />
+        <label for="prepMinutes">Minutes:</label>
+        <input type="number" id="prepMinutes" min="0" max="59" value="15" />
+        <button id="step5Next">Next</button>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step" id="step6">
+        <h2>How long will it take to travel there?</h2>
+        <label for="travelHours">Hours:</label>
+        <input type="number" id="travelHours" min="0" max="24" value="0" />
+        <label for="travelMinutes">Minutes:</label>
+        <input type="number" id="travelMinutes" min="0" max="59" value="20" />
+        <button id="step6Next">Next</button>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="step" id="step7">
+        <h2>How early would you like to arrive?</h2>
+        <label for="earlyMinutes">Minutes:</label>
+        <input type="number" id="earlyMinutes" min="0" max="120" value="10" />
+        <button id="step7Next">Next</button>
+      </div>
+
+      <!-- Step 8 -->
+      <div class="step" id="step8">
+        <h2>Should I allow extra time as a buffer?</h2>
+        <select id="bufferNeeded">
+          <option value="yes">Yes, add a buffer</option>
+          <option value="no">No buffer needed</option>
+        </select>
+        <div id="bufferTimeContainer">
+          <label for="bufferMinutes">Buffer time (minutes):</label>
+          <input
+            type="number"
+            id="bufferMinutes"
+            min="0"
+            max="120"
+            value="15"
+          />
+        </div>
+        <button id="step8Next">Start My Timer</button>
+      </div>
+
+      <!-- Step 9 and 10 - Timer Display -->
+      <div class="step" id="step9">
+        <h2>Time Remaining</h2>
+        <div class="time-info">
+          <p><strong>Task:</strong> <span id="displayTask"></span></p>
+          <p><strong>Due:</strong> <span id="displayDueTime"></span></p>
+          <p>
+            <strong>Start Preparing:</strong> <span id="displayPrepTime"></span>
+          </p>
+        </div>
+
+        <div class="time-display" id="timeDisplay">00:00:00</div>
+
+        <div class="bubbles-container" id="bubblesContainer">
+          <!-- Bubbles will be generated here -->
+        </div>
+
+        <button id="resetButton">Reset</button>
+      </div>
+    </div>
+
+    <div class="notifications" id="notificationsContainer"></div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Variables to store user inputs
+        let taskName, taskDateTime, prepTime, travelTime, earlyTime, bufferTime;
+        let totalBubbles,
+          bubblesPopped = 0;
+        let timer, startTime, endTime;
+
+        // Get all step elements
+        const steps = document.querySelectorAll(".step");
+        const progressBar = document.getElementById("progressBar");
+
+        // Step 1 - Begin Button
+        document
+          .getElementById("beginButton")
+          .addEventListener("click", function () {
+            goToStep(2);
+          });
+
+        // Step 2 - Task Input
+        document
+          .getElementById("step2Next")
+          .addEventListener("click", function () {
+            taskName = document.getElementById("taskInput").value.trim();
+            if (taskName) {
+              goToStep(3);
+            } else {
+              showNotification("Please enter what you need to do next.");
+            }
+          });
+
+        // Step 3 - Date and Time
+        document
+          .getElementById("step3Next")
+          .addEventListener("click", function () {
+            const date = document.getElementById("taskDate").value;
+            const time = document.getElementById("taskTime").value;
+
+            if (date && time) {
+              taskDateTime = new Date(`${date}T${time}`);
+
+              // Check if the selected time is in the future
+              if (taskDateTime > new Date()) {
+                goToStep(4);
+              } else {
+                showNotification("Please select a future date and time.");
+              }
+            } else {
+              showNotification("Please select both date and time.");
+            }
+          });
+
+        // Step 4 - Preparation Needed
+        document
+          .getElementById("step4Next")
+          .addEventListener("click", function () {
+            if (document.getElementById("prepNeeded").value === "yes") {
+              goToStep(5);
+            } else {
+              // Skip prep time step
+              prepTime = 0;
+              goToStep(6);
+            }
+          });
+
+        // Step 5 - Prep Time
+        document
+          .getElementById("step5Next")
+          .addEventListener("click", function () {
+            const hours =
+              parseInt(document.getElementById("prepHours").value) || 0;
+            const minutes =
+              parseInt(document.getElementById("prepMinutes").value) || 0;
+
+            prepTime = (hours * 60 + minutes) * 60 * 1000; // Convert to milliseconds
+            goToStep(6);
+          });
+
+        // Step 6 - Travel Time
+        document
+          .getElementById("step6Next")
+          .addEventListener("click", function () {
+            const hours =
+              parseInt(document.getElementById("travelHours").value) || 0;
+            const minutes =
+              parseInt(document.getElementById("travelMinutes").value) || 0;
+
+            travelTime = (hours * 60 + minutes) * 60 * 1000; // Convert to milliseconds
+            goToStep(7);
+          });
+
+        // Step 7 - Early Arrival
+        document
+          .getElementById("step7Next")
+          .addEventListener("click", function () {
+            const minutes =
+              parseInt(document.getElementById("earlyMinutes").value) || 0;
+
+            earlyTime = minutes * 60 * 1000; // Convert to milliseconds
+            goToStep(8);
+          });
+
+        // Step 8 - Buffer Time
+        document
+          .getElementById("bufferNeeded")
+          .addEventListener("change", function () {
+            const bufferTimeContainer = document.getElementById(
+              "bufferTimeContainer"
+            );
+            if (this.value === "yes") {
+              bufferTimeContainer.style.display = "block";
+            } else {
+              bufferTimeContainer.style.display = "none";
+            }
+          });
+
+        document
+          .getElementById("step8Next")
+          .addEventListener("click", function () {
+            if (document.getElementById("bufferNeeded").value === "yes") {
+              const minutes =
+                parseInt(document.getElementById("bufferMinutes").value) || 0;
+              bufferTime = minutes * 60 * 1000; // Convert to milliseconds
+            } else {
+              bufferTime = 0;
+            }
+
+            calculateTimes();
+            goToStep(9);
+          });
+
+        // Reset Button
+        document
+          .getElementById("resetButton")
+          .addEventListener("click", function () {
+            if (timer) clearInterval(timer);
+            resetApp();
+          });
+
+        // Helper Functions
+
+        // Navigate to a specific step
+        function goToStep(stepNumber) {
+          steps.forEach((step, index) => {
+            step.classList.remove("active");
+            if (index + 1 === stepNumber) {
+              step.classList.add("active");
+            }
+          });
+
+          // Update progress bar
+          let progress = ((stepNumber - 1) / (steps.length - 1)) * 100;
+          progressBar.style.width = `${progress}%`;
+        }
+
+        // Calculate all times and setup the timer
+        function calculateTimes() {
+          // Calculate when to start getting ready
+          const totalLeadTime = prepTime + travelTime + earlyTime + bufferTime;
+          startTime = new Date();
+          endTime = new Date(taskDateTime.getTime() - totalLeadTime);
+
+          const timeRemaining = endTime.getTime() - startTime.getTime();
+
+          // Update display information
+          document.getElementById("displayTask").textContent = taskName;
+          document.getElementById("displayDueTime").textContent =
+            formatDateSimple(taskDateTime);
+          document.getElementById("displayPrepTime").textContent =
+            formatDateSimple(endTime);
+
+          // Create bubbles (each representing 30 minutes)
+          createBubbles(timeRemaining);
+
+          // Start the timer
+          startTimer();
+        }
+
+        // Create time bubbles
+        function createBubbles(timeRemaining) {
+          const bubblesContainer = document.getElementById("bubblesContainer");
+          bubblesContainer.innerHTML = "";
+
+          // Calculate number of 30-minute bubbles
+          const thirtyMinInMs = 30 * 60 * 1000;
+          totalBubbles = Math.ceil(timeRemaining / thirtyMinInMs);
+
+          for (let i = 0; i < totalBubbles; i++) {
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+            bubble.id = `bubble-${i + 1}`;
+            bubble.textContent = i + 1;
+            bubble.style.animationDelay = `${i * 0.2}s`;
+            bubblesContainer.appendChild(bubble);
+          }
+        }
+
+        // Start the countdown timer
+        function startTimer() {
+          updateTimeDisplay();
+
+          timer = setInterval(() => {
+            const now = new Date();
+            const timeLeft = endTime.getTime() - now.getTime();
+
+            if (timeLeft <= 0) {
+              clearInterval(timer);
+              document.getElementById("timeDisplay").textContent =
+                "Time to start preparing!";
+              document.body.style.backgroundColor = "#ffe6e6";
+              showNotification(
+                "⏰ Time's up! Start preparing for: " + taskName
+              );
+              popAllRemainingBubbles();
+              return;
+            }
+
+            updateTimeDisplay();
+            checkAndPopBubbles(timeLeft);
+          }, 1000);
+        }
+
+        // Update the time display
+        function updateTimeDisplay() {
+          const now = new Date();
+          const timeLeft = endTime.getTime() - now.getTime();
+
+          if (timeLeft <= 0) {
+            document.getElementById("timeDisplay").textContent = "00:00:00";
+            return;
+          }
+
+          const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+          const minutes = Math.floor(
+            (timeLeft % (1000 * 60 * 60)) / (1000 * 60)
+          );
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+          document.getElementById("timeDisplay").textContent = `${hours
+            .toString()
+            .padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+            .toString()
+            .padStart(2, "0")}`;
+        }
+
+        // Check and pop bubbles based on time passed
+        function checkAndPopBubbles(timeLeft) {
+          const thirtyMinInMs = 30 * 60 * 1000;
+          const bubblesRemaining = Math.ceil(timeLeft / thirtyMinInMs);
+
+          if (bubblesRemaining < totalBubbles - bubblesPopped) {
+            // Pop a bubble
+            const bubbleToPop = document.getElementById(
+              `bubble-${totalBubbles - bubblesPopped}`
+            );
+            if (bubbleToPop) {
+              bubbleToPop.classList.add("popped");
+              bubblesPopped++;
+
+              showNotification(
+                `🫧 Bubble popped! ${bubblesRemaining} out of ${totalBubbles} bubbles remaining.`
+              );
+            }
+          }
+        }
+
+        // Pop all remaining bubbles
+        function popAllRemainingBubbles() {
+          for (let i = bubblesPopped + 1; i <= totalBubbles; i++) {
+            const bubble = document.getElementById(`bubble-${i}`);
+            if (bubble) {
+              setTimeout(() => {
+                bubble.classList.add("popped");
+              }, (totalBubbles - i) * 200);
+            }
+          }
+        }
+
+        // Show a notification
+        function showNotification(message) {
+          const container = document.getElementById("notificationsContainer");
+          const notification = document.createElement("div");
+          notification.className = "notification";
+          notification.textContent = message;
+          container.appendChild(notification);
+
+          // Remove after animation completes
+          setTimeout(() => {
+            notification.remove();
+          }, 5000);
+        }
+
+        // Simple date formatting without any library dependencies
+        function formatDateSimple(date) {
+          const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          const months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+
+          const dayName = days[date.getDay()];
+          const monthName = months[date.getMonth()];
+          const dayNum = date.getDate();
+
+          let hours = date.getHours();
+          const ampm = hours >= 12 ? "PM" : "AM";
+          hours = hours % 12;
+          hours = hours ? hours : 12; // the hour '0' should be '12'
+          const minutes = date.getMinutes().toString().padStart(2, "0");
+
+          return `${dayName}, ${monthName} ${dayNum}, ${hours}:${minutes} ${ampm}`;
+        }
+
+        // Reset the app to initial state
+        function resetApp() {
+          goToStep(1);
+          bubblesPopped = 0;
+          document.body.style.backgroundColor = "#f0f8ff";
+
+          // Clear form fields
+          document.getElementById("taskInput").value = "";
+          document.getElementById("taskDate").value = "";
+          document.getElementById("taskTime").value = "";
+          document.getElementById("prepHours").value = "0";
+          document.getElementById("prepMinutes").value = "15";
+          document.getElementById("travelHours").value = "0";
+          document.getElementById("travelMinutes").value = "20";
+          document.getElementById("earlyMinutes").value = "10";
+          document.getElementById("bufferMinutes").value = "15";
+        }
+
+        // Initialize the app
+        function init() {
+          // Set today's date as the default for the date picker
+          const today = new Date();
+          const formattedDate = today.toISOString().split("T")[0];
+          document.getElementById("taskDate").value = formattedDate;
+
+          // Set a default time 2 hours from now
+          const hours = (today.getHours() + 2).toString().padStart(2, "0");
+          const minutes = today.getMinutes().toString().padStart(2, "0");
+          document.getElementById("taskTime").value = `${hours}:${minutes}`;
+        }
+
+        // Run initialization
+        init();
+      });
+    </script>
+  </body>
+</html>
